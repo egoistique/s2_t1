@@ -72,7 +72,8 @@ public class DateReader {
                     int year = Integer.parseInt(dot[2]);
                     if (month < 13 && month > 0)
                         if (day > 0 && day <= count(month)) {
-                            MyDate myDate = new MyDate(year, month, day);
+                            if (month == 12){day++;}
+                            MyDate myDate = new MyDate(year, month, day );
                             dates.add(myDate);
                             return true;
                         }
@@ -98,7 +99,7 @@ public class DateReader {
             }
             if (months < 13 && months > 0 && years > 0 && years < 10000)
                 if (days > 0 && days <= count(months)){
-                    MyDate myDate = new MyDate(years, months, days);
+                    MyDate myDate = new MyDate(years, months, days );
                     dates.add(myDate);
                     return true;
                 }

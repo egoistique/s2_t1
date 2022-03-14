@@ -96,45 +96,6 @@ public class MyDate {
         }
     }
 
-    private String parseDaysToString1() {
-        int year = this.days / Day.YEAR.getDays();
-        year -= countLeapYears(1, year) / Day.YEAR.getDays();
-        int yearOnRet;
-        if (year >= 1918) {
-            this.days += 13;
-        }
-        int daysDiv = this.days - ((year) * Day.YEAR.getDays() + countLeapYears(1, year));
-        if (daysDiv < 0) {
-            daysDiv = this.days - ((year - 1) * Day.YEAR.getDays() + countLeapYears(1, year - 1));
-            yearOnRet = year - 1;
-        } else {
-            yearOnRet = year;
-        }
-        int flagDays = 0;
-        int[] daysMonths1 = new int[Month.values().length];
-        for (int i = 0; i < daysMonths1.length; i++) {
-            daysMonths1[i] = Month.values()[i].getDays();
-            if (i == 1 && isLeapYear(year)) {
-                daysMonths1[i]++;
-            }
-        }
-        int monthCount1 = 0;
-        for (int days : daysMonths1) {
-            if (flagDays + days <= daysDiv) {
-                flagDays += days;
-                monthCount1++;
-            } else {
-                break;
-            }
-        }
-        int day = daysDiv - flagDays ;
-        int dayWeek = (day % 7 == 0) ? 7 : (day % 7 + 1);
-        if (yearOnRet == year - 1) {
-            day++;
-        }
-        return this.format.parse(yearOnRet, monthCount1 + 1, day, dayWeek);
-    }
-
     private String parseDaysToString() {
         int year = this.days / Day.YEAR.getDays() + 1;
         year -= countLeapYears(1, year) / Day.YEAR.getDays();
@@ -158,15 +119,12 @@ public class MyDate {
         }
         int day = daysDiv - flagDays + 1;
         int dayWeek = (day % 7 == 0) ? 7 : (day % 7 + 1);
-        return monthCount < 9 && monthCount != 1 ? this.format.parse(year, monthCount, day, dayWeek) : parseDateSepDec();
+        return monthCount < 9 && monthCount != 1 ? this.format.parse(year, monthCount, day, dayWeek) : parseDateSepDecJan();
     }
 
-    private String parseDateSepDec(){
+    private String parseDateSepDecJan(){
             int year1 = this.days / Day.YEAR.getDays() + 1;
             year1 -= countLeapYears(1, year1) / Day.YEAR.getDays();
-//            if (year1 >= 1918) {
-//                this.days += 13;
-//            }
             int daysDiv1 = this.days - ((year1 - 2) * Day.YEAR.getDays() + countLeapYears(1, year1 - 2));
             int flagDays1 = 0;
             int[] daysMonths2 = new int[Month.values().length];
@@ -185,9 +143,36 @@ public class MyDate {
                     break;
                 }
             }
-            int day1 = daysDiv1 - flagDays1 + 2;
+            int day1 = daysDiv1 - flagDays1 + 1;
             int dayWeek1 = (day1 % 7 == 0) ? 7 : (day1 % 7 + 1);
-            return this.format.parse(year1 - 1, monthCount2, day1, dayWeek1);
+
+            try {
+                return this.format.parse(year1 - 1, monthCount2, day1, dayWeek1);
+            } catch (ArrayIndexOutOfBoundsException e) {
+                int year = this.days / Day.YEAR.getDays() + 1;
+                year -= countLeapYears(1, year) / Day.YEAR.getDays();
+                int daysDiv = this.days - ((year - 1) * Day.YEAR.getDays() + countLeapYears(1, year - 1));
+                int flagDays = 0;
+                int[] daysMonths = new int[Month.values().length];
+                for (int i = 0; i < daysMonths.length; i++) {
+                    daysMonths[i] = Month.values()[i].getDays();
+                    if (i == 1 && isLeapYear(year)) {
+                        daysMonths[i]++;
+                    }
+                }
+                int monthCount = 1;
+                for (int days : daysMonths) {
+                    if (flagDays + days <= daysDiv) {
+                        flagDays += days;
+                        monthCount++;
+                    } else {
+                        break;
+                    }
+                }
+                int day = daysDiv - flagDays + 1;
+                int dayWeek = (day % 7 == 0) ? 7 : (day % 7 + 1);
+                return this.format.parse(year , monthCount, day , dayWeek);
+            }
     }
 
     private boolean isLeapYear(int year) { //определение високосного года
@@ -383,5 +368,4 @@ public class MyDate {
             return sb.delete(sb.length() - 1, sb.length()).toString();
         }
     }
-
 }
