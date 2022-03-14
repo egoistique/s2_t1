@@ -6,6 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DateReader {
+
+    static List<MyDate> dates = new ArrayList<>();
+
     static String readFileAsString() throws Exception {
         String date = "";
         date = new String(Files.readAllBytes(Paths.get("Text.txt")));
@@ -47,7 +50,6 @@ public class DateReader {
         clearWords(words);
 
         for (int i = 0; i < words.length; i++) {
-
             if (isDate1(words[i]))
                 res.add(words[i]);
             if (i < words.length - 2) {
@@ -55,7 +57,6 @@ public class DateReader {
                     String[] arr = new String[]{words[i], words[i + 1], words[i + 2]};
                     res.add(String.join(" ", arr));
                 }
-
             }
         }
         return res;
@@ -70,10 +71,12 @@ public class DateReader {
                     int month = Integer.parseInt(dot[1]);
                     int year = Integer.parseInt(dot[2]);
                     if (month < 13 && month > 0)
-                        if (day > 0 && day <= count(month))
+                        if (day > 0 && day <= count(month)) {
+                            MyDate myDate = new MyDate(year, month, day);
+                            dates.add(myDate);
                             return true;
+                        }
                 } catch (Exception ignored) {
-
                 }
             }
         }
@@ -90,15 +93,19 @@ public class DateReader {
                 if (m.equals(month.toLowerCase())) {
                     break;
                 }
+
                 months++;
             }
             if (months < 13 && months > 0 && years > 0 && years < 10000)
-                if (days > 0 && days <= count(months))
+                if (days > 0 && days <= count(months)){
+                    MyDate myDate = new MyDate(years, months, days);
+                    dates.add(myDate);
                     return true;
+                }
+
         } catch (Exception ignored) {
 
         }
-
         return false;
     }
 

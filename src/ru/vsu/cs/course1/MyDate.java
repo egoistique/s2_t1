@@ -40,6 +40,21 @@ public class MyDate {
         }
     }
 
+    public enum Week{
+        MONDAY("Monday "), TUESDAY("Tuesday"), WEDNESDAY( "Wednesday"), THURSDAY("Thursday"),
+        FRIDAY("Friday"), SATURDAY("Saturday"), SUNDAY("Sunday");
+
+        private String name;
+
+        Week(String name) {
+            this.name = name;
+        }
+        @Override
+        public String toString() {
+            return String.format("%s", this.name);
+        }
+    }
+
     private Format format = new Format("dd.MM.yyyy");
 
     private int days;
@@ -81,6 +96,45 @@ public class MyDate {
         }
     }
 
+    private String parseDaysToString1() {
+        int year = this.days / Day.YEAR.getDays();
+        year -= countLeapYears(1, year) / Day.YEAR.getDays();
+        int yearOnRet;
+        if (year >= 1918) {
+            this.days += 13;
+        }
+        int daysDiv = this.days - ((year) * Day.YEAR.getDays() + countLeapYears(1, year));
+        if (daysDiv < 0) {
+            daysDiv = this.days - ((year - 1) * Day.YEAR.getDays() + countLeapYears(1, year - 1));
+            yearOnRet = year - 1;
+        } else {
+            yearOnRet = year;
+        }
+        int flagDays = 0;
+        int[] daysMonths1 = new int[Month.values().length];
+        for (int i = 0; i < daysMonths1.length; i++) {
+            daysMonths1[i] = Month.values()[i].getDays();
+            if (i == 1 && isLeapYear(year)) {
+                daysMonths1[i]++;
+            }
+        }
+        int monthCount1 = 0;
+        for (int days : daysMonths1) {
+            if (flagDays + days <= daysDiv) {
+                flagDays += days;
+                monthCount1++;
+            } else {
+                break;
+            }
+        }
+        int day = daysDiv - flagDays ;
+        int dayWeek = (day % 7 == 0) ? 7 : (day % 7 + 1);
+        if (yearOnRet == year - 1) {
+            day++;
+        }
+        return this.format.parse(yearOnRet, monthCount1 + 1, day, dayWeek);
+    }
+
     private String parseDaysToString() {
         int year = this.days / Day.YEAR.getDays() + 1;
         year -= countLeapYears(1, year) / Day.YEAR.getDays();
@@ -103,7 +157,37 @@ public class MyDate {
             }
         }
         int day = daysDiv - flagDays + 1;
-        return this.format.parse(year, monthCount, day);
+        int dayWeek = (day % 7 == 0) ? 7 : (day % 7 + 1);
+        return monthCount < 9 && monthCount != 1 ? this.format.parse(year, monthCount, day, dayWeek) : parseDateSepDec();
+    }
+
+    private String parseDateSepDec(){
+            int year1 = this.days / Day.YEAR.getDays() + 1;
+            year1 -= countLeapYears(1, year1) / Day.YEAR.getDays();
+//            if (year1 >= 1918) {
+//                this.days += 13;
+//            }
+            int daysDiv1 = this.days - ((year1 - 2) * Day.YEAR.getDays() + countLeapYears(1, year1 - 2));
+            int flagDays1 = 0;
+            int[] daysMonths2 = new int[Month.values().length];
+            for (int i = 0; i < daysMonths2.length; i++) {
+                daysMonths2[i] = Month.values()[i].getDays();
+                if (i == 1 && isLeapYear(year1)) {
+                    daysMonths2[i]++;
+                }
+            }
+            int monthCount2 = 1;
+            for (int days : daysMonths2) {
+                if (flagDays1 + days <= daysDiv1) {
+                    flagDays1 += days;
+                    monthCount2++;
+                } else {
+                    break;
+                }
+            }
+            int day1 = daysDiv1 - flagDays1 + 2;
+            int dayWeek1 = (day1 % 7 == 0) ? 7 : (day1 % 7 + 1);
+            return this.format.parse(year1 - 1, monthCount2, day1, dayWeek1);
     }
 
     private boolean isLeapYear(int year) { //определение високосного года
@@ -198,7 +282,7 @@ public class MyDate {
         private char getPrefix(String pattern) {
             char prefix = 0;
             pattern = pattern.trim().replace("y", "").replaceAll("M", "").
-                    replaceAll("d", "");
+                    replaceAll("d", "").replaceAll("w", "");
             if (pattern.length() > 0 && checkSymbols(pattern)) {
                 prefix = pattern.charAt(0);
             }
@@ -258,6 +342,18 @@ public class MyDate {
             return result;
         }
 
+        private String getDayWeek(String pattern, int dayWeek){
+            String result = "";
+            switch (pattern.length()) {
+                case 1:
+                    result = String.format("%s", Week.values()[dayWeek - 1].toString().substring(0, 3).toLowerCase());
+                    break;
+                default:
+                    result = String.format("%s", Week.values()[dayWeek - 1].toString());
+            }
+            return result;
+        }
+
         private void checkArguments(String arg) {
             if (arg.charAt(0) == 'd' && arg.length() > 2) {
                 throw new IllegalArgumentException("incorrect format day");
@@ -265,10 +361,12 @@ public class MyDate {
                 throw new IllegalArgumentException("incorrect format month");
             } else if (arg.charAt(0) == 'y' && (arg.length() == 3 || arg.length() > 4)) {
                 throw new IllegalArgumentException("incorrect format year");
+            } else if (arg.charAt(0) == 'w' && (arg.length() > 3)) {
+            throw new IllegalArgumentException("incorrect format week day");
             }
         }
 
-        public String parse(int year, int month, int day) {
+        public String parse(int year, int month, int day, int dayWeek) {
             StringBuilder sb = new StringBuilder();
             for (String arg : this.patterns) {
                 checkArguments(arg);
@@ -276,8 +374,10 @@ public class MyDate {
                     sb.append(getDay(arg, day)).append(this.prefix);
                 } else if (arg.charAt(0) == 'y') {
                     sb.append(getYear(arg, year)).append(this.prefix);
-                } else {
+                } else if (arg.charAt(0) == 'M'){
                     sb.append(getMonth(arg, month)).append(this.prefix);
+                } else {
+                    sb.append(getDayWeek(arg, dayWeek)).append(this.prefix);
                 }
             }
             return sb.delete(sb.length() - 1, sb.length()).toString();
